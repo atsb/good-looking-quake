@@ -1,7 +1,9 @@
 
 #include <stdio.h>
-#include "SDL_audio.h"
+#include <SDL_audio.h>
+#ifdef SDL_MAJOR_VERSION == 1
 #include "SDL_byteorder.h"
+#endif
 #include "quakedef.h"
 
 static dma_t the_shm;

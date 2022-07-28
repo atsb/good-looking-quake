@@ -1,6 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*- */ 
 
-#include "SDL.h"
+#include <SDL.h>
 #ifndef _WIN32
 #include <unistd.h>
 #include <sys/time.h>

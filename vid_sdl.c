@@ -1,6 +1,6 @@
 // vid_sdl.h -- sdl video driver 
 
-#include "SDL.h"
+#include <SDL.h>
 #include "quakedef.h"
 #include "d_local.h"
 
@@ -16,8 +16,13 @@ unsigned short  d_8to16table[256];
 
 int    VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte    *VGA_pagebase;
-
+#if SDL_MAJOR_VERSION == 1
 static SDL_Surface *screen = NULL;
+#elif SDL_MAJOR_VERSION == 2
+static SDL_Window *window;
+static SDL_Surface *surface;
+static SDL_Renderer *render;
+#endif
 
 static qboolean mouse_avail;
 static float   mouse_x, mouse_y;
@@ -25,16 +30,22 @@ static int mouse_oldbuttonstate = 0;
 
 void    VID_SetPalette (unsigned char *palette)
 {
-    int i;
+#if SDL_MAJOR_VERSION == 2
+    SDL_Palette *palette_colors;
+#endif
     SDL_Color colors[256];
 
-    for ( i=0; i<256; ++i )
+    for (int i=0; i<256; ++i )
     {
         colors[i].r = *palette++;
         colors[i].g = *palette++;
         colors[i].b = *palette++;
     }
+#if SDL_MAJOR_VERSION == 1
     SDL_SetColors(screen, colors, 0, 256);
+#else
+    SDL_SetPaletteColors(palette_colors, colors, 0, 256);
+#endif
 }
 
 void    VID_ShiftPalette (unsigned char *palette)
@@ -50,9 +61,14 @@ void    VID_Init (unsigned char *palette)
     Uint8 video_bpp;
     Uint16 video_w, video_h;
     Uint32 flags;
-
+    int ret;
+#if SDL_MAJOR_VERSION == 1
+    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM)
+#elif SDL_MAJOR_VERSION == 2
+    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+#endif
     // Load the SDL library
-    if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_CDROM) < 0)
+    if (ret < 0)
         Sys_Error("VID: Couldn't load SDL: %s", SDL_GetError());
 
     // Set up display mode (width and height)
@@ -87,20 +103,41 @@ void    VID_Init (unsigned char *palette)
     }
 
     // Set video width, height and flags
-    flags = (SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
-
+#if SDL_MAJOR_VERSION == 1    
+    flags = (SDL_SWSURFACE| SDL_HWPALETTE | SDL_FULLSCREEN);
+#elif SDL_MAJOR_VERSION == 2
+    flags = (SDL_SWSURFACE | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
+#endif
     if ( COM_CheckParm ("-fullscreen") )
+#if SDL_MAJOR_VERSION == 1
         flags |= SDL_FULLSCREEN;
-
+#elif SDL_MAJOR_VERSION == 2
+        flags |= SDL_WINDOW_FULLSCREEN;
+#endif
     if ( COM_CheckParm ("-window") ) {
+#if SDL_MAJOR_VERSION == 1
         flags &= ~SDL_FULLSCREEN;
+#elif SDL_MAJOR_VERSION == 2
+        flags &= ~SDL_WINDOW_FULLSCREEN;
+#endif
     }
 
     // Initialize display 
+#if SDL_MAJOR_VERSION == 1
     if (!(screen = SDL_SetVideoMode(vid.width, vid.height, 8, flags)))
-        Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
+#elif SDL_MAJOR_VERSION == 2
+    if(!(window = SDL_CreateWindow(NULL, vid.width, vid.height, NULL, NULL, SDL_WINDOW_RESIZABLE)))
+#endif
+      Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
+
     VID_SetPalette(palette);
+#if SDL_MAJOR_VERSION == 1    
     SDL_WM_SetCaption("sdlquake","sdlquake");
+#elif SDL_MAJOR_VERSION == 2    
+    SDL_SetWindowTitle(window, "good looking quake");
+    render = SDL_CreateRenderer(window, 1, SDL_RENDERER_ACCELERATED);
+    SDL_RenderClear(render);
+#endif    
     // now know everything we need to know about the buffer
     VGA_width = vid.conwidth = vid.width;
     VGA_height = vid.conheight = vid.height;
@@ -108,8 +145,13 @@ void    VID_Init (unsigned char *palette)
     vid.numpages = 1;
     vid.colormap = host_colormap;
     vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
+#if SDL_MAJOR_VERSION == 1    
     VGA_pagebase = vid.buffer = screen->pixels;
     VGA_rowbytes = vid.rowbytes = screen->pitch;
+#elif SDL_MAJOR_VERSION == 2
+    VGA_pagebase = vid.buffer = surface->pixels;
+    VGA_rowbytes = vid.rowbytes = surface->pitch;
+#endif
     vid.conbuffer = vid.buffer;
     vid.conrowbytes = vid.rowbytes;
     vid.direct = 0;
@@ -134,6 +176,11 @@ void    VID_Init (unsigned char *palette)
 void    VID_Shutdown (void)
 {
     SDL_Quit();
+#if SDL_MAJOR_VERSION == 2
+    SDL_DestroyWindow(window);
+    SDL_FreeSurface(surface);
+    SDL_DestroyRenderer(render);
+#endif
 }
 
 void    VID_Update (vrect_t *rects)
@@ -161,7 +208,12 @@ void    VID_Update (vrect_t *rects)
         sdlrects[i].h = rect->height;
         ++i;
     }
+#if SDL_MAJOR_VERSION == 1
     SDL_UpdateRects(screen, n, sdlrects);
+#elif SDL_MAJOR_VERSION == 2
+    SDL_RenderPresent(render);
+    SDL_FillRect(surface, n, sdlrects);
+#endif
 }
 
 /*
@@ -173,14 +225,23 @@ void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
     Uint8 *offset;
 
-
+#if SDL_MAJOR_VERSION == 1
     if (!screen) return;
-    if ( x < 0 ) x = screen->w+x-1;
-    offset = (Uint8 *)screen->pixels + y*screen->pitch + x;
+    if (x < 0) x = screen->w + x - 1;
+    offset = (Uint8*)screen->pixels + y * screen->pitch + x;
+#elif SDL_MAJOR_VERSION == 2
+    if (!window) return;
+    if (x < 0) x = surface->w + x - 1;    
+    offset = (Uint8*)surface->pixels + y * surface->pitch + x;
+#endif
     while ( height-- )
     {
         memcpy(offset, pbitmap, width);
+#if SDL_MAJOR_VERSION == 1
         offset += screen->pitch;
+#elif SDL_MAJOR_VERSION == 2
+        offset += surface->pitch;
+#endif
         pbitmap += width;
     }
 }
@@ -193,9 +254,14 @@ D_EndDirectRect
 */
 void D_EndDirectRect (int x, int y, int width, int height)
 {
+#if SDL_MAJOR_VERSION == 1
     if (!screen) return;
-    if (x < 0) x = screen->w+x-1;
-    SDL_UpdateRect(screen, x, y, width, height);
+    if (x < 0) x = screen->w + x - 1;
+#elif SDL_MAJOR_VERSION == 2
+    if (!window) return;
+    if (x < 0) x = surface->w + x - 1;
+#endif
+    //SDL_UpdateRect(screen, x, y, width, height);
 }
 
 
@@ -236,7 +302,9 @@ void Sys_SendKeyEvents(void)
                    case SDLK_F10: sym = K_F10; break;
                    case SDLK_F11: sym = K_F11; break;
                    case SDLK_F12: sym = K_F12; break;
+#ifdef WIP                   
                    case SDLK_BREAK:
+#endif
                    case SDLK_PAUSE: sym = K_PAUSE; break;
                    case SDLK_UP: sym = K_UPARROW; break;
                    case SDLK_DOWN: sym = K_DOWNARROW; break;
@@ -316,7 +384,11 @@ void Sys_SendKeyEvents(void)
                          (event.motion.x > ((vid.width/2)+(vid.width/4))) ||
                          (event.motion.y < ((vid.height/2)-(vid.height/4))) ||
                          (event.motion.y > ((vid.height/2)+(vid.height/4))) ) {
+#if SDL_MAJOR_VERSION == 1                        
                         SDL_WarpMouse(vid.width/2, vid.height/2);
+#elif SDL_MAJOR_VERSION == 2
+                        SDL_WarpMouseGlobal(vid.width / 2, vid.height / 2);
+#endif
                     }
                 }
                 break;

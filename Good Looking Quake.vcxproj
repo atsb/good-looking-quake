@@ -75,12 +75,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\SDL2\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\SDL2\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\SDL2\include\SDL2;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\SDL2\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,7 +104,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -108,6 +112,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -131,7 +136,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -139,79 +144,80 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\cd_sdl.c" />
-    <ClCompile Include="..\chase.c" />
-    <ClCompile Include="..\cl_demo.c" />
-    <ClCompile Include="..\cl_input.c" />
-    <ClCompile Include="..\cl_main.c" />
-    <ClCompile Include="..\cl_parse.c" />
-    <ClCompile Include="..\cl_tent.c" />
-    <ClCompile Include="..\cmd.c" />
-    <ClCompile Include="..\common.c" />
-    <ClCompile Include="..\console.c" />
-    <ClCompile Include="..\crc.c" />
-    <ClCompile Include="..\cvar.c" />
-    <ClCompile Include="..\draw.c" />
-    <ClCompile Include="..\d_edge.c" />
-    <ClCompile Include="..\d_fill.c" />
-    <ClCompile Include="..\d_init.c" />
-    <ClCompile Include="..\d_modech.c" />
-    <ClCompile Include="..\d_part.c" />
-    <ClCompile Include="..\d_polyse.c" />
-    <ClCompile Include="..\d_scan.c" />
-    <ClCompile Include="..\d_sky.c" />
-    <ClCompile Include="..\d_sprite.c" />
-    <ClCompile Include="..\d_surf.c" />
-    <ClCompile Include="..\d_zpoint.c" />
-    <ClCompile Include="..\host.c" />
-    <ClCompile Include="..\host_cmd.c" />
-    <ClCompile Include="..\keys.c" />
-    <ClCompile Include="..\mathlib.c" />
-    <ClCompile Include="..\menu.c" />
-    <ClCompile Include="..\model.c" />
-    <ClCompile Include="..\net_bsd.c" />
-    <ClCompile Include="..\net_dgrm.c" />
-    <ClCompile Include="..\net_loop.c" />
-    <ClCompile Include="..\net_main.c" />
-    <ClCompile Include="..\net_udp.c" />
-    <ClCompile Include="..\net_vcr.c" />
-    <ClCompile Include="..\net_wso.c" />
-    <ClCompile Include="..\pr_cmds.c" />
-    <ClCompile Include="..\pr_edict.c" />
-    <ClCompile Include="..\pr_exec.c" />
-    <ClCompile Include="..\r_aclip.c" />
-    <ClCompile Include="..\r_alias.c" />
-    <ClCompile Include="..\r_bsp.c" />
-    <ClCompile Include="..\r_draw.c" />
-    <ClCompile Include="..\r_edge.c" />
-    <ClCompile Include="..\r_efrag.c" />
-    <ClCompile Include="..\r_light.c" />
-    <ClCompile Include="..\r_main.c" />
-    <ClCompile Include="..\r_misc.c" />
-    <ClCompile Include="..\r_part.c" />
-    <ClCompile Include="..\r_sky.c" />
-    <ClCompile Include="..\r_sprite.c" />
-    <ClCompile Include="..\r_surf.c" />
-    <ClCompile Include="..\r_vars.c" />
-    <ClCompile Include="..\sbar.c" />
-    <ClCompile Include="..\screen.c" />
-    <ClCompile Include="..\snd_dma.c" />
-    <ClCompile Include="..\snd_mem.c" />
-    <ClCompile Include="..\snd_mix.c" />
-    <ClCompile Include="..\snd_sdl.c" />
-    <ClCompile Include="..\sv_main.c" />
-    <ClCompile Include="..\sv_move.c" />
-    <ClCompile Include="..\sv_phys.c" />
-    <ClCompile Include="..\sv_user.c" />
-    <ClCompile Include="..\sys_sdl.c" />
-    <ClCompile Include="..\vid_sdl.c" />
-    <ClCompile Include="..\view.c" />
-    <ClCompile Include="..\wad.c" />
-    <ClCompile Include="..\world.c" />
-    <ClCompile Include="..\zone.c" />
+    <ClCompile Include="cd_sdl.c" />
+    <ClCompile Include="chase.c" />
+    <ClCompile Include="cl_demo.c" />
+    <ClCompile Include="cl_input.c" />
+    <ClCompile Include="cl_main.c" />
+    <ClCompile Include="cl_parse.c" />
+    <ClCompile Include="cl_tent.c" />
+    <ClCompile Include="cmd.c" />
+    <ClCompile Include="common.c" />
+    <ClCompile Include="console.c" />
+    <ClCompile Include="crc.c" />
+    <ClCompile Include="cvar.c" />
+    <ClCompile Include="draw.c" />
+    <ClCompile Include="d_edge.c" />
+    <ClCompile Include="d_fill.c" />
+    <ClCompile Include="d_init.c" />
+    <ClCompile Include="d_modech.c" />
+    <ClCompile Include="d_part.c" />
+    <ClCompile Include="d_polyse.c" />
+    <ClCompile Include="d_scan.c" />
+    <ClCompile Include="d_sky.c" />
+    <ClCompile Include="d_sprite.c" />
+    <ClCompile Include="d_surf.c" />
+    <ClCompile Include="d_zpoint.c" />
+    <ClCompile Include="host.c" />
+    <ClCompile Include="host_cmd.c" />
+    <ClCompile Include="keys.c" />
+    <ClCompile Include="mathlib.c" />
+    <ClCompile Include="menu.c" />
+    <ClCompile Include="model.c" />
+    <ClCompile Include="net_bsd.c" />
+    <ClCompile Include="net_dgrm.c" />
+    <ClCompile Include="net_loop.c" />
+    <ClCompile Include="net_main.c" />
+    <ClCompile Include="net_udp.c" />
+    <ClCompile Include="net_vcr.c" />
+    <ClCompile Include="net_wso.c" />
+    <ClCompile Include="pr_cmds.c" />
+    <ClCompile Include="pr_edict.c" />
+    <ClCompile Include="pr_exec.c" />
+    <ClCompile Include="r_aclip.c" />
+    <ClCompile Include="r_alias.c" />
+    <ClCompile Include="r_bsp.c" />
+    <ClCompile Include="r_draw.c" />
+    <ClCompile Include="r_edge.c" />
+    <ClCompile Include="r_efrag.c" />
+    <ClCompile Include="r_light.c" />
+    <ClCompile Include="r_main.c" />
+    <ClCompile Include="r_misc.c" />
+    <ClCompile Include="r_part.c" />
+    <ClCompile Include="r_sky.c" />
+    <ClCompile Include="r_sprite.c" />
+    <ClCompile Include="r_surf.c" />
+    <ClCompile Include="r_vars.c" />
+    <ClCompile Include="sbar.c" />
+    <ClCompile Include="screen.c" />
+    <ClCompile Include="snd_dma.c" />
+    <ClCompile Include="snd_mem.c" />
+    <ClCompile Include="snd_mix.c" />
+    <ClCompile Include="snd_sdl.c" />
+    <ClCompile Include="sv_main.c" />
+    <ClCompile Include="sv_move.c" />
+    <ClCompile Include="sv_phys.c" />
+    <ClCompile Include="sv_user.c" />
+    <ClCompile Include="sys_sdl.c" />
+    <ClCompile Include="vid_sdl.c" />
+    <ClCompile Include="view.c" />
+    <ClCompile Include="wad.c" />
+    <ClCompile Include="world.c" />
+    <ClCompile Include="zone.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
