@@ -678,13 +678,13 @@ void CL_ParseStaticSound (void)
 	vec3_t		org;
 	int			sound_num, vol, atten;
 	int			i;
-
+	
 	for (i=0 ; i<3 ; i++)
 		org[i] = MSG_ReadCoord ();
 	sound_num = MSG_ReadByte ();
 	vol = MSG_ReadByte ();
 	atten = MSG_ReadByte ();
-
+	
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
@@ -700,8 +700,6 @@ void CL_ParseServerMessage (void)
 {
 	int			cmd;
 	int			i;
-	char		*str; //johnfitz
-	int			total, j, lastcmd; //johnfitz
 	
 //
 // if recording demos, copy the message out
@@ -716,8 +714,7 @@ void CL_ParseServerMessage (void)
 // parse the message
 //
 	MSG_BeginReading ();
-
-	lastcmd = 0;	
+	
 	while (1)
 	{
 		if (msg_badread)
@@ -745,7 +742,7 @@ void CL_ParseServerMessage (void)
 		switch (cmd)
 		{
 		default:
-			Host_Error ("Illegible server message, previous was %s\n", svc_strings[lastcmd]); //johnfitz -- added svc_strings[lastcmd]
+			Host_Error ("CL_ParseServerMessage: Illegible server message\n");
 			break;
 			
 		case svc_nop:
