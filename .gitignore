@@ -17,3 +17,5 @@ configure
 config.h.in
 aclocal.m4
 goodlookingquake
+*.m4
+goodlookingquake

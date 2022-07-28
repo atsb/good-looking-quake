@@ -609,12 +609,11 @@ Read all incoming data from the server
 */
 int CL_ReadFromServer (void)
 {
-	int			ret;
-
+	int		ret;
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
-
+	
 	do
 	{
 		ret = CL_GetMessage ();
@@ -622,11 +621,11 @@ int CL_ReadFromServer (void)
 			Host_Error ("CL_ReadFromServer: lost server connection");
 		if (!ret)
 			break;
-
+		
 		cl.last_received_message = realtime;
 		CL_ParseServerMessage ();
 	} while (ret && cls.state == ca_connected);
-
+	
 	if (cl_shownet.value)
 		Con_Printf ("\n");
 
@@ -731,4 +730,3 @@ void CL_Init (void)
 	Cmd_AddCommand ("playdemo", CL_PlayDemo_f);
 	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
 }
-
