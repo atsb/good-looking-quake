@@ -59,9 +59,12 @@ extern	unsigned	d_8to24table[256];
 extern void (*vid_menudrawfn)(void);
 extern void (*vid_menukeyfn)(int key);
 
-void	VID_SetPalette (unsigned char *palette);
+#if SDL_MAJOR_VERSION == 1
+void	VID_SetPalette(unsigned char *palette);
+#elif SDL_MAJOR_VERSION == 2
+void	VID_SetPalette (SDL_Palette *palette);
 // called at startup and after any gamma correction
-
+#endif
 void	VID_ShiftPalette (unsigned char *palette);
 // called for bonus and pain flashes, and for underwater color changes
 

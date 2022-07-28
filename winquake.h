@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef SERVERONLY
 #include <ddraw.h>
 #include <dsound.h>
-#ifndef SDL
+#ifdef SDL
 #include <mgraph.h>
 #endif
 #endif

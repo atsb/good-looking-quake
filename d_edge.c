@@ -34,7 +34,14 @@ extern void			R_RotateBmodel (void);
 extern void			R_TransformFrustum (void);
 
 vec3_t		transformed_modelorg;
-
+fixed16_t	sadjust, tadjust;
+float	d_sdivzstepu, d_tdivzstepu, d_zistepu;
+float	d_sdivzstepv, d_tdivzstepv, d_zistepv;
+float	d_sdivzorigin, d_tdivzorigin, d_ziorigin;
+pixel_t* d_viewbuffer;
+pixel_t* cacheblock;
+fixed16_t	bbextents, bbextentt;
+int		cachewidth;
 /*
 ==============
 D_DrawPoly

@@ -858,14 +858,16 @@ void CL_ParseServerMessage (void)
 		case svc_temp_entity:
 			CL_ParseTEnt ();
 			break;
-
+#ifdef CD
 		case svc_setpause:
 			{
 				cl.paused = MSG_ReadByte ();
 
 				if (cl.paused)
 				{
+
 					CDAudio_Pause ();
+			
 				}
 				else
 				{
@@ -873,7 +875,7 @@ void CL_ParseServerMessage (void)
 				}
 			}
 			break;
-			
+#endif				
 		case svc_signonnum:
 			i = MSG_ReadByte ();
 			if (i <= cls.signon)
@@ -900,7 +902,7 @@ void CL_ParseServerMessage (void)
 		case svc_spawnstaticsound:
 			CL_ParseStaticSound ();
 			break;
-
+#ifdef CD
 		case svc_cdtrack:
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
@@ -909,7 +911,7 @@ void CL_ParseServerMessage (void)
 			else
 				CDAudio_Play ((byte)cl.cdtrack, true);
 			break;
-
+#endif
 		case svc_intermission:
 			cl.intermission = 1;
 			cl.completed_time = cl.time;

@@ -444,13 +444,14 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 	int r;
 	unsigned long addr;
-	int psize = getpagesize();
+	int psize;
+	//getpagesize();
 
 	fprintf(stderr, "writable code %lx-%lx\n", startaddr, startaddr+length);
 
 	addr = startaddr & ~(psize-1);
 
-	r = mprotect((char*)addr, length + startaddr - addr, 7);
+	//r = mprotect((char*)addr, length + startaddr - addr, 7);
 
 	if (r < 0)
     		Sys_Error("Protection change failed\n");

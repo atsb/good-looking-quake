@@ -93,6 +93,9 @@ int			m_return_state;
 qboolean	m_return_onerror;
 char		m_return_reason [32];
 
+cvar_t		_windowed_mouse;
+modestate_t	modestate;
+
 #define StartingGame	(m_multiplayer_cursor == 1)
 #define JoiningGame		(m_multiplayer_cursor == 0)
 #define SerialConfig	(m_net_cursor == 0)

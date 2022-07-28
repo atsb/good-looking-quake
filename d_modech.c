@@ -29,6 +29,9 @@ int	d_y_aspect_shift, d_pix_min, d_pix_max, d_pix_shift;
 int		d_scantable[MAXHEIGHT];
 short	*zspantable[MAXHEIGHT]; 
 
+short* d_pzbuffer;
+unsigned int d_zrowbytes, d_zwidth;
+
 /*
 ================
 D_Patch

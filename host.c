@@ -710,9 +710,9 @@ void _Host_Frame (float time)
 	}
 	else
 		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
-	
+#ifdef CD
 	CDAudio_Update();
-
+#endif
 	if (host_speeds.value)
 	{
 		pass1 = (time1 - time3)*1000;
@@ -902,7 +902,9 @@ void Host_Init (quakeparms_t *parms)
 #endif
 
 #endif	// _WIN32
+#ifdef CD		
 		CDAudio_Init ();
+#endif		
 		Sbar_Init ();
 		CL_Init ();
 #ifdef _WIN32 // on non win32, mouse comes before video for security reasons
@@ -945,8 +947,9 @@ void Host_Shutdown(void)
 	scr_disabled_for_loading = true;
 
 	Host_WriteConfiguration (); 
-
+#ifdef CD
 	CDAudio_Shutdown ();
+#endif	
 	NET_Shutdown ();
 	S_Shutdown();
 	IN_Shutdown ();

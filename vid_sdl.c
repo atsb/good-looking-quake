@@ -22,29 +22,37 @@ static SDL_Surface *screen = NULL;
 static SDL_Window *window;
 static SDL_Surface *surface;
 static SDL_Renderer *render;
+static SDL_Palette* palette;
 #endif
 
 static qboolean mouse_avail;
 static float   mouse_x, mouse_y;
 static int mouse_oldbuttonstate = 0;
 
+#if SDL_MAJOR_VERSION == 1
 void    VID_SetPalette (unsigned char *palette)
-{
-#if SDL_MAJOR_VERSION == 2
-    SDL_Palette *palette_colors;
+#elif SDL_MAJOR_VERSION == 2
+void    VID_SetPalette(SDL_Palette *palette)
 #endif
+{
     SDL_Color colors[256];
 
     for (int i=0; i<256; ++i )
     {
+#if SDL_MAJOR_VERSION == 1
         colors[i].r = *palette++;
         colors[i].g = *palette++;
         colors[i].b = *palette++;
+#elif SDL_MAJOR_VERSION == 2
+        colors[i].r = palette++;
+        colors[i].g = palette++;
+        colors[i].b = palette++;
+#endif
     }
 #if SDL_MAJOR_VERSION == 1
     SDL_SetColors(screen, colors, 0, 256);
 #else
-    SDL_SetPaletteColors(palette_colors, colors, 0, 256);
+    SDL_SetPaletteColors(palette, colors, 0, 256);
 #endif
 }
 
@@ -118,7 +126,7 @@ void    VID_Init (unsigned char *palette)
 #if SDL_MAJOR_VERSION == 1
         flags &= ~SDL_FULLSCREEN;
 #elif SDL_MAJOR_VERSION == 2
-        flags &= ~SDL_WINDOW_FULLSCREEN;
+        flags &= ~SDL_WINDOW_SHOWN;
 #endif
     }
 
@@ -132,10 +140,11 @@ void    VID_Init (unsigned char *palette)
 
     VID_SetPalette(palette);
 #if SDL_MAJOR_VERSION == 1    
-    SDL_WM_SetCaption("sdlquake","sdlquake");
+    SDL_WM_SetCaption(NULL, "good looking quake");
 #elif SDL_MAJOR_VERSION == 2    
     SDL_SetWindowTitle(window, "good looking quake");
     render = SDL_CreateRenderer(window, 1, SDL_RENDERER_ACCELERATED);
+    SDL_RenderPresent(render);
     SDL_RenderClear(render);
 #endif    
     // now know everything we need to know about the buffer

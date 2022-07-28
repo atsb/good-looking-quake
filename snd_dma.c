@@ -81,7 +81,8 @@ cvar_t snd_noextraupdate = {"snd_noextraupdate", "0"};
 cvar_t snd_show = {"snd_show", "0"};
 cvar_t _snd_mixahead = {"_snd_mixahead", "0.1", true};
 
-
+DWORD gSndBufSize;
+LPDIRECTSOUNDBUFFER pDSBuf;
 // ====================================================================
 // User-setable variables
 // ====================================================================
@@ -847,7 +848,7 @@ void S_ExtraUpdate (void)
 {
 
 #ifdef _WIN32
-	IN_Accumulate ();
+	//IN_Accumulate ();
 #endif
 
 	if (snd_noextraupdate.value)
@@ -902,7 +903,7 @@ void S_Update_(void)
 
 	S_PaintChannels (endtime);
 
-	SNDDMA_Submit ();
+	//SNDDMA_Submit ();
 #endif /* ! SDL */
 }
 

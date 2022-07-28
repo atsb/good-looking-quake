@@ -219,6 +219,73 @@
     <ClCompile Include="world.c" />
     <ClCompile Include="zone.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="adivtab.h" />
+    <ClInclude Include="anorms.h" />
+    <ClInclude Include="anorm_dots.h" />
+    <ClInclude Include="asm_draw.h" />
+    <ClInclude Include="asm_i386.h" />
+    <ClInclude Include="block16.h" />
+    <ClInclude Include="block8.h" />
+    <ClInclude Include="bspfile.h" />
+    <ClInclude Include="cdaudio.h" />
+    <ClInclude Include="client.h" />
+    <ClInclude Include="cmd.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="conproc.h" />
+    <ClInclude Include="console.h" />
+    <ClInclude Include="crc.h" />
+    <ClInclude Include="cvar.h" />
+    <ClInclude Include="dosisms.h" />
+    <ClInclude Include="draw.h" />
+    <ClInclude Include="d_iface.h" />
+    <ClInclude Include="d_ifacea.h" />
+    <ClInclude Include="d_local.h" />
+    <ClInclude Include="input.h" />
+    <ClInclude Include="keys.h" />
+    <ClInclude Include="mathlib.h" />
+    <ClInclude Include="menu.h" />
+    <ClInclude Include="model.h" />
+    <ClInclude Include="modelgen.h" />
+    <ClInclude Include="mpdosock.h" />
+    <ClInclude Include="net.h" />
+    <ClInclude Include="net_bw.h" />
+    <ClInclude Include="net_dgrm.h" />
+    <ClInclude Include="net_ipx.h" />
+    <ClInclude Include="net_loop.h" />
+    <ClInclude Include="net_mp.h" />
+    <ClInclude Include="net_ser.h" />
+    <ClInclude Include="net_udp.h" />
+    <ClInclude Include="net_vcr.h" />
+    <ClInclude Include="net_wins.h" />
+    <ClInclude Include="net_wipx.h" />
+    <ClInclude Include="progdefs.h" />
+    <ClInclude Include="progs.h" />
+    <ClInclude Include="protocol.h" />
+    <ClInclude Include="pr_comp.h" />
+    <ClInclude Include="quakedef.h" />
+    <ClInclude Include="render.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="r_local.h" />
+    <ClInclude Include="r_shared.h" />
+    <ClInclude Include="sbar.h" />
+    <ClInclude Include="screen.h" />
+    <ClInclude Include="server.h" />
+    <ClInclude Include="sound.h" />
+    <ClInclude Include="spritegn.h" />
+    <ClInclude Include="sys.h" />
+    <ClInclude Include="vgamodes.h" />
+    <ClInclude Include="vid.h" />
+    <ClInclude Include="view.h" />
+    <ClInclude Include="vregset.h" />
+    <ClInclude Include="wad.h" />
+    <ClInclude Include="winquake.h" />
+    <ClInclude Include="world.h" />
+    <ClInclude Include="zone.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Good_looking_quake.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
