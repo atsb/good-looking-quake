@@ -71,7 +71,7 @@ void    VID_Init (unsigned char *palette)
     Uint16 video_w, video_h;
     Uint32 flags;
     int ret;
-    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM)
+    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM);
     // Load the SDL library
     if (ret < 0)
         Sys_Error("VID: Couldn't load SDL: %s", SDL_GetError());
@@ -308,10 +308,7 @@ void Sys_SendKeyEvents(void)
                    case SDLK_F10: sym = K_F10; break;
                    case SDLK_F11: sym = K_F11; break;
                    case SDLK_F12: sym = K_F12; break;
-#ifdef WIP                   
-                   case SDLK_BREAK:
-#endif
-                   case SDLK_PAUSE: sym = K_PAUSE; break;
+                   case SDLK_BREAK: sym = K_PAUSE; break;
                    case SDLK_UP: sym = K_UPARROW; break;
                    case SDLK_DOWN: sym = K_DOWNARROW; break;
                    case SDLK_RIGHT: sym = K_RIGHTARROW; break;
