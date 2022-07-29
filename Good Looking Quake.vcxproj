@@ -204,6 +204,8 @@
     <ClCompile Include="r_vars.c" />
     <ClCompile Include="sbar.c" />
     <ClCompile Include="screen.c" />
+    <ClCompile Include="SDL_cdrom.c" />
+    <ClCompile Include="SDL_syscdrom.c" />
     <ClCompile Include="snd_dma.c" />
     <ClCompile Include="snd_mem.c" />
     <ClCompile Include="snd_mix.c" />
@@ -270,6 +272,8 @@
     <ClInclude Include="r_shared.h" />
     <ClInclude Include="sbar.h" />
     <ClInclude Include="screen.h" />
+    <ClInclude Include="SDL_cdrom.h" />
+    <ClInclude Include="SDL_syscdrom.h" />
     <ClInclude Include="server.h" />
     <ClInclude Include="sound.h" />
     <ClInclude Include="spritegn.h" />

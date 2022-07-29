@@ -1,6 +1,7 @@
 // vid_sdl.h -- sdl video driver 
 
 #include <SDL.h>
+#include "SDL_cdrom.h"
 #include "quakedef.h"
 #include "d_local.h"
 
@@ -70,11 +71,7 @@ void    VID_Init (unsigned char *palette)
     Uint16 video_w, video_h;
     Uint32 flags;
     int ret;
-#if SDL_MAJOR_VERSION == 1
     ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM)
-#elif SDL_MAJOR_VERSION == 2
-    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-#endif
     // Load the SDL library
     if (ret < 0)
         Sys_Error("VID: Couldn't load SDL: %s", SDL_GetError());
