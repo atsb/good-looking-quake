@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // quakedef.h -- primary header for client
 
 //#define	GLTEST			// experimental stuff
-#define CD // CD Drive Access(Warning only works with SDL1)
+#define DEBUG_SDLNET_DEVELOPMENT // Debugs the version on the screen...
 #define	QUAKE_GAME			// as opposed to utilities
 
 #undef VERSION

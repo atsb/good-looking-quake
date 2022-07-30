@@ -131,7 +131,7 @@ void    VID_Init (unsigned char *palette)
 #if SDL_MAJOR_VERSION == 1
     if (!(screen = SDL_SetVideoMode(vid.width, vid.height, 8, flags)))
 #elif SDL_MAJOR_VERSION == 2
-    if(!(window = SDL_CreateWindow(NULL, vid.width, vid.height, NULL, NULL, SDL_WINDOW_RESIZABLE)))
+    if(!(window = SDL_CreateWindow(NULL, vid.width, vid.height, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_RESIZABLE)))
 #endif
       Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
 
@@ -140,6 +140,9 @@ void    VID_Init (unsigned char *palette)
     SDL_WM_SetCaption(NULL, "good looking quake");
 #elif SDL_MAJOR_VERSION == 2    
     SDL_SetWindowTitle(window, "good looking quake");
+    surface = SDL_GetWindowSurface(window);
+    SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
+    SDL_UpdateWindowSurface(window);
     render = SDL_CreateRenderer(window, 1, SDL_RENDERER_ACCELERATED);
     SDL_RenderPresent(render);
     SDL_RenderClear(render);
@@ -267,7 +270,11 @@ void D_EndDirectRect (int x, int y, int width, int height)
     if (!window) return;
     if (x < 0) x = surface->w + x - 1;
 #endif
-    //SDL_UpdateRect(screen, x, y, width, height);
+#if SDL_MAJOR_VERSION == 1
+    SDL_UpdateRect(screen, x, y, width, height);
+#elif SDL_MAJOR_VERSION == 2
+    SDL_RenderPresent(render);
+#endif
 }
 
 
@@ -308,7 +315,10 @@ void Sys_SendKeyEvents(void)
                    case SDLK_F10: sym = K_F10; break;
                    case SDLK_F11: sym = K_F11; break;
                    case SDLK_F12: sym = K_F12; break;
-                   case SDLK_BREAK: sym = K_PAUSE; break;
+                   case SDLK_PAUSE: sym = K_PAUSE; break;
+#if SDL_MAJOR_VERSION == 1                   
+                   case SDLK_BREAK:
+#endif                   
                    case SDLK_UP: sym = K_UPARROW; break;
                    case SDLK_DOWN: sym = K_DOWNARROW; break;
                    case SDLK_RIGHT: sym = K_RIGHTARROW; break;

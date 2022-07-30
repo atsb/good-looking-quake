@@ -74,7 +74,7 @@ void CDAudio_Pause()
 	if (!cd_id || !enabled) return;
 	if (SDL_CDStatus(cd_id) != CD_PLAYING) return;
 
-	if (SDL_CDPause(cd_id))
+	if(SDL_CDPause(cd_id))
 		Con_DPrintf("CDAudio_Pause: Failed to pause track.\n");
 }
 
@@ -83,7 +83,7 @@ void CDAudio_Resume()
 {
 	if (!cd_id || !enabled) return;
 	if (SDL_CDStatus(cd_id) != CD_PAUSED) return;
-
+	
 	if (SDL_CDResume(cd_id))
 		Con_DPrintf("CDAudio_Resume: Failed tp resume track.\n");
 }

@@ -69,6 +69,7 @@ goodlookingquake_SOURCES =		\
 	net_loop.h		\
 	net_main.c		\
 	net_udp.c		\
+	net_udp_sdl.c   \
 	net_udp.h		\
 	net_vcr.c		\
 	net_vcr.h		\
