@@ -80,9 +80,10 @@ cvar_t ambient_fade = {"ambient_fade", "100"};
 cvar_t snd_noextraupdate = {"snd_noextraupdate", "0"};
 cvar_t snd_show = {"snd_show", "0"};
 cvar_t _snd_mixahead = {"_snd_mixahead", "0.1", true};
-
+#ifdef _WIN32
 DWORD gSndBufSize;
 LPDIRECTSOUNDBUFFER pDSBuf;
+#endif
 // ====================================================================
 // User-setable variables
 // ====================================================================
@@ -607,8 +608,8 @@ void S_ClearBuffer (void)
 		pDSBuf->lpVtbl->Unlock(pDSBuf, pData, dwSize, NULL, 0);
 	
 	}
-	else
 #endif
+	else
 	{
 		Q_memset(shm->buffer, clear, shm->samples * shm->samplebits/8);
 	}
@@ -903,7 +904,6 @@ void S_Update_(void)
 
 	S_PaintChannels (endtime);
 
-	//SNDDMA_Submit ();
 #endif /* ! SDL */
 }
 

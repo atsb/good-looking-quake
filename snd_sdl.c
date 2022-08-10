@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <SDL_audio.h>
 #ifdef SDL_MAJOR_VERSION == 1
-#include "SDL_byteorder.h"
+#include <SDL_byteorder.h>
 #endif
 #include "quakedef.h"
 

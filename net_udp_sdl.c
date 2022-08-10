@@ -38,44 +38,12 @@ int channel;
 
 #define MAX_NAME 3000
 
-#ifdef DEBUG_SDLNET_DEVELOPMENT
-void SDL_UDP_PrintVersion(void);
-
-void SDL_UDP_PrintVersion(void)
-{
-	
-#if SDL_NET_MAJOR_VERSION == 1
-	SDL_version version;
-	SDL_version Linked;
-	SDL_NET_VERSION(&version);
-	SDLNet_Linked_Version();
-	Con_Printf("compiled with SDL_net version: %d.%d.%d\n",
-		version.major, version.minor, version.patch);
-	Con_Printf("compiled with SDL_net link_version: %d.%d.%d\n",
-		Linked.major, Linked.minor, Linked.patch);
-
-#elif SDL_NET_MAJOR_VERSION == 2
-	SDLNet_version version;
-	const SDLNet_version* link_version = SDLNet_Linked_Version();
-	SDL_NET_VERSION(&version);
-	Con_Printf("compiled with SDL_net version: %d.%d.%d\n",
-		version.major, version.minor, version.patch);
-	Con_Printf("compiled with SDL_net link_version: %d.%d.%d\n",
-		link_version->major, link_version->minor, link_version->patch);
-#endif
-}
-#endif
-
 int UDP_Init(void)
 {
 	char log[MAX_NAME];
 
 	if (COM_CheckParm("-noudp"))
 		return -1;
-
-#ifdef DEBUG_SDLNET_DEVELOPMENT
-	SDL_UDP_PrintVersion();
-#endif
 	
 	int ret;
 	ret = SDLNet_Init();
@@ -116,7 +84,7 @@ void UDP_Shutdown(void)
 	SDLNet_FreePacket(packet);
 	SDLNet_UDP_Unbind(udpsocket, channel);
 	SDLNet_UDP_Close(udpsocket);
-	SDLNet_DelSocket(NULL, udpsocket);
+	SDLNet_DelSocket(set, udpsocket);
 	SDLNet_FreeSocketSet(set);
 }
 

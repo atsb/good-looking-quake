@@ -21,7 +21,7 @@ byte    *VGA_pagebase;
 static SDL_Surface *screen = NULL;
 #elif SDL_MAJOR_VERSION == 2
 static SDL_Window *window;
-static SDL_Surface *surface;
+static SDL_Surface *screen;
 static SDL_Renderer *render;
 static SDL_Palette* palette;
 #endif
@@ -52,7 +52,7 @@ void    VID_SetPalette(SDL_Palette *palette)
     }
 #if SDL_MAJOR_VERSION == 1
     SDL_SetColors(screen, colors, 0, 256);
-#else
+#elif SDL_MAJOR_VERSION == 2
     SDL_SetPaletteColors(palette, colors, 0, 256);
 #endif
 }
@@ -70,8 +70,10 @@ void    VID_Init (unsigned char *palette)
     Uint8 video_bpp;
     Uint16 video_w, video_h;
     Uint32 flags;
+    Uint32 a, r, g, b;
     int ret;
     ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM);
+    
     // Load the SDL library
     if (ret < 0)
         Sys_Error("VID: Couldn't load SDL: %s", SDL_GetError());
@@ -131,7 +133,7 @@ void    VID_Init (unsigned char *palette)
 #if SDL_MAJOR_VERSION == 1
     if (!(screen = SDL_SetVideoMode(vid.width, vid.height, 8, flags)))
 #elif SDL_MAJOR_VERSION == 2
-    if(!(window = SDL_CreateWindow(NULL, vid.width, vid.height, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_RESIZABLE)))
+    if(!(window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, vid.width, vid.height, flags)))
 #endif
       Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
 
@@ -140,12 +142,15 @@ void    VID_Init (unsigned char *palette)
     SDL_WM_SetCaption(NULL, "good looking quake");
 #elif SDL_MAJOR_VERSION == 2    
     SDL_SetWindowTitle(window, "good looking quake");
-    surface = SDL_GetWindowSurface(window);
-    SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
+    SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888, 8, &r, &g, &b, &a);
+    screen = SDL_CreateRGBSurface(0, vid.width, vid.height, 8, r, g, b, a);
     SDL_UpdateWindowSurface(window);
-    render = SDL_CreateRenderer(window, 1, SDL_RENDERER_ACCELERATED);
-    SDL_RenderPresent(render);
-    SDL_RenderClear(render);
+    render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_SetRenderDrawBlendMode(render, SDL_BLENDMODE_BLEND);
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+    SDL_ShowCursor(SDL_DISABLE);
+    SDL_CreateRGBSurface(0, vid.width, vid.height,
+    8, 0, 0, 0, 0);
 #endif    
     // now know everything we need to know about the buffer
     VGA_width = vid.conwidth = vid.width;
@@ -153,14 +158,9 @@ void    VID_Init (unsigned char *palette)
     vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
     vid.numpages = 1;
     vid.colormap = host_colormap;
-    vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-#if SDL_MAJOR_VERSION == 1    
+    vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048)); 
     VGA_pagebase = vid.buffer = screen->pixels;
     VGA_rowbytes = vid.rowbytes = screen->pitch;
-#elif SDL_MAJOR_VERSION == 2
-    VGA_pagebase = vid.buffer = surface->pixels;
-    VGA_rowbytes = vid.rowbytes = surface->pitch;
-#endif
     vid.conbuffer = vid.buffer;
     vid.conrowbytes = vid.rowbytes;
     vid.direct = 0;
@@ -179,7 +179,7 @@ void    VID_Init (unsigned char *palette)
     D_InitCaches (cache, cachesize);
 
     // initialize the mouse
-    SDL_ShowCursor(0);
+    SDL_ShowCursor(SDL_DISABLE);
 }
 
 void    VID_Shutdown (void)
@@ -187,7 +187,7 @@ void    VID_Shutdown (void)
     SDL_Quit();
 #if SDL_MAJOR_VERSION == 2
     SDL_DestroyWindow(window);
-    SDL_FreeSurface(surface);
+    SDL_FreeSurface(screen);
     SDL_DestroyRenderer(render);
 #endif
 }
@@ -220,8 +220,7 @@ void    VID_Update (vrect_t *rects)
 #if SDL_MAJOR_VERSION == 1
     SDL_UpdateRects(screen, n, sdlrects);
 #elif SDL_MAJOR_VERSION == 2
-    SDL_RenderPresent(render);
-    SDL_FillRect(surface, n, sdlrects);
+    SDL_FillRect(screen, n, sdlrects);
 #endif
 }
 
@@ -234,23 +233,13 @@ void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
     Uint8 *offset;
 
-#if SDL_MAJOR_VERSION == 1
     if (!screen) return;
     if (x < 0) x = screen->w + x - 1;
     offset = (Uint8*)screen->pixels + y * screen->pitch + x;
-#elif SDL_MAJOR_VERSION == 2
-    if (!window) return;
-    if (x < 0) x = surface->w + x - 1;    
-    offset = (Uint8*)surface->pixels + y * surface->pitch + x;
-#endif
     while ( height-- )
     {
         memcpy(offset, pbitmap, width);
-#if SDL_MAJOR_VERSION == 1
         offset += screen->pitch;
-#elif SDL_MAJOR_VERSION == 2
-        offset += surface->pitch;
-#endif
         pbitmap += width;
     }
 }
@@ -263,13 +252,8 @@ D_EndDirectRect
 */
 void D_EndDirectRect (int x, int y, int width, int height)
 {
-#if SDL_MAJOR_VERSION == 1
     if (!screen) return;
     if (x < 0) x = screen->w + x - 1;
-#elif SDL_MAJOR_VERSION == 2
-    if (!window) return;
-    if (x < 0) x = surface->w + x - 1;
-#endif
 #if SDL_MAJOR_VERSION == 1
     SDL_UpdateRect(screen, x, y, width, height);
 #elif SDL_MAJOR_VERSION == 2
@@ -398,7 +382,7 @@ void Sys_SendKeyEvents(void)
                          (event.motion.y < ((vid.height/2)-(vid.height/4))) ||
                          (event.motion.y > ((vid.height/2)+(vid.height/4))) ) {
 #if SDL_MAJOR_VERSION == 1                        
-                        SDL_WarpMouse(vid.width/2, vid.height/2);
+                        SDL_WarpMouse(vid.width / 2, vid.height / 2);
 #elif SDL_MAJOR_VERSION == 2
                         SDL_WarpMouseGlobal(vid.width / 2, vid.height / 2);
 #endif
