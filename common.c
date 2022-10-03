@@ -1,7 +1,6 @@
 /*
 Copyright (C) 1996-2001 Id Software, Inc.
-Copyright (C) 2002-2005 John Fitzgibbons and others
-Copyright (C) 2007-2008 Kristian Duske
+Copyright (C) 2002-2009 John Fitzgibbons and others
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -35,6 +34,8 @@ cvar_t  registered = {"registered","0"};
 cvar_t  cmdline = {"cmdline","", false, true};
 
 qboolean        com_modified;   // set true if using non-id files
+
+int com_nummissionpacks; //johnfitz
 
 qboolean		proghack;
 
@@ -1176,7 +1177,7 @@ void COM_InitArgv (int argc, char **argv)
 		standard_quake = false;
 	}
 
-	if (COM_CheckParm ("-hipnotic"))
+	if (COM_CheckParm ("-hipnotic") || COM_CheckParm ("-quoth")) //johnfitz -- "-quoth" support
 	{
 		hipnotic = true;
 		standard_quake = false;
@@ -1473,7 +1474,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 			for (i=0 ; i<pak->numfiles ; i++)
 				if (!strcmp (pak->files[i].name, filename))
 				{       // found it!
-					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
+					Con_DPrintf ("PackFile: %s : %s\n",pak->filename, filename);
 					if (handle)
 					{
 						*handle = pak->handle;
@@ -1525,7 +1526,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				strcpy (netpath, cachepath);
 			}
 
-			Sys_Printf ("FindFile: %s\n",netpath);
+			Con_DPrintf ("FindFile: %s\n",netpath);
 			com_filesize = Sys_FileOpenRead (netpath, &i);
 			if (handle)
 				*handle = i;
@@ -1539,7 +1540,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 
 	}
 
-	Sys_Printf ("FindFile: can't find %s\n", filename);
+	Con_DPrintf ("FindFile: can't find %s\n", filename);
 
 	if (handle)
 		*handle = -1;
@@ -1647,7 +1648,9 @@ byte *COM_LoadFile (char *path, int usehunk)
 
 	((byte *)buf)[len] = 0;
 
-	Draw_BeginDisc ();
+	// Draw_BeginDisc causes core dumps when called excessively in big mods S.A.
+	// Draw_BeginDisc ();
+
 	Sys_FileRead (h, buf, len);
 	COM_CloseFile (h);
 
@@ -1831,10 +1834,25 @@ void COM_InitFilesystem () //johnfitz -- modified based on topaz's tutorial
 	COM_AddGameDirectory (va("%s/"GAMENAME, basedir) );
 	strcpy (com_gamedir, va("%s/"GAMENAME, basedir));
 
+	//johnfitz -- track number of mission packs added
+	//since we don't want to allow the "game" command to strip them away
+	com_nummissionpacks = 0;
 	if (COM_CheckParm ("-rogue"))
+	{
 		COM_AddGameDirectory (va("%s/rogue", basedir) );
+		com_nummissionpacks++;
+	}
 	if (COM_CheckParm ("-hipnotic"))
+	{
 		COM_AddGameDirectory (va("%s/hipnotic", basedir) );
+		com_nummissionpacks++;
+	}
+	if (COM_CheckParm ("-quoth"))
+	{
+		COM_AddGameDirectory (va("%s/quoth", basedir) );
+		com_nummissionpacks++;
+	}
+	//johnfitz
 
 	i = COM_CheckParm ("-game");
 	if (i && i < com_argc-1)

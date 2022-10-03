@@ -407,7 +407,7 @@ void Host_ShutdownServer(qboolean crash)
 	int		i;
 	int		count;
 	sizebuf_t	buf;
-	byte		message[4];
+	char		message[4];
 	double	start;
 
 	if (!sv.active)
@@ -947,10 +947,10 @@ void Host_Shutdown(void)
 	CDAudio_Shutdown ();	
 	NET_Shutdown ();
 	S_Shutdown();
-	IN_Shutdown ();
-
+	
 	if (cls.state != ca_dedicated)
 	{
+        IN_Shutdown (); // input is only initialized in Host_Init if we're not dedicated -- kristian
 		VID_Shutdown();
 	}
 }

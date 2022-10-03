@@ -611,7 +611,7 @@ void Cache_Move ( cache_system_t *c)
 	{
 //		Con_Printf ("cache_move failed\n");
 
-		Cache_Free (c->user); // tough luck...
+		Cache_Free (c->user);
 	}
 }
 

@@ -68,8 +68,8 @@ void PR_LoadProgs (void);
 
 void PR_Profile_f (void);
 
-const char *PR_GetString (int num);
-int PR_SetEngineString (const char *s);
+char *PR_GetString (int num);
+int PR_SetEngineString (char *s);
 int PR_AllocString (int bufferlength, char **ptr);
 
 edict_t *ED_Alloc (void);
@@ -130,3 +130,4 @@ void ED_PrintEdicts (void);
 void ED_PrintNum (int ent);
 
 eval_t *GetEdictFieldValue(edict_t *ed, char *field);
+
