@@ -23,6 +23,7 @@ NOTE:
 
 #include "quakedef.h"
 #include <SDL_net.h>
+#include <string.h>
 
 IPaddress* ip;
 UDPsocket udpsocket;
@@ -31,6 +32,7 @@ SDLNet_SocketSet set;
 Uint16 port;
 cvar_t hostname;
 Uint32 available;
+Uint32 Available_sockets;
 static int net_acceptsocket = -1;		// socket for fielding new connections
 static int net_controlsocket;
 static int net_broadcastsocket = 0;
@@ -52,13 +54,12 @@ int UDP_Init(void)
 		Con_Printf("SDLNet failed to start: %s", SDLNet_GetError());	
 	}
 
-	SDLNet_UDP_AddSocket(NULL, udpsocket);
+	SDLNet_UDP_AddSocket(set, udpsocket);
 
-	//Get Host
-	SDLNet_ResolveHost(ip, log, ip->host);
-	SDLNet_UDP_Bind(udpsocket, channel, ip);
+	//Get Host and port
+	SDLNet_ResolveHost(ip->port, log, ip->host);
+	SDLNet_UDP_Bind(udpsocket, channel, ip->host);
 	
-
 	// if the quake hostname isn't set, set it to the machine name
 	if(Q_strcmp(hostname.string, "UNNAMED") == 0)
 	{
@@ -66,7 +67,7 @@ int UDP_Init(void)
 		Cvar_Set("hostname", log);
 	}
 
-	ret = SDLNet_UDP_Open(port);
+	ret = UDP_OpenSocket(port);
 	if(ret == -1)
 	{
 		Sys_Error("UDP_Init: Unable to open control socket\n");
@@ -137,7 +138,7 @@ int UDP_CheckNewConnections(void)
 	if (net_acceptsocket == -1)
 		return -1;
 
-	int ret = SDLNet_CheckSockets(NULL, available);
+	int ret = SDLNet_CheckSockets(set, available);
 
 	if(ret == -1)
 	{
@@ -146,7 +147,7 @@ int UDP_CheckNewConnections(void)
 
 	else
 	{
-		SDLNet_AllocSocketSet(available);
+		SDLNet_AllocSocketSet(Available_sockets);
 		SDLNet_SocketReady(udpsocket);
 	}
 
@@ -191,48 +192,71 @@ int UDP_Broadcast(int socket, byte* buf, int len)
 
 char* UDP_AddrToString(struct qsockaddr* addr)
 {
-
+	//WIP SDLNet_GetLocalAddresses(ip, addr);
 
 }
 
 int UDP_StringToAddr(char* string, struct qsockaddr* addr)
 {
-
-
+	//WIP
 }
 
 int UDP_GetSocketAddr(int socket, struct qsockaddr* addr)
 {
-   
+   //WIP
 }
 
 int UDP_GetNameFromAddr(struct qsockaddr* addr, char* name)
 {
-
-
+	//WIP
 }
 
 int UDP_GetAddrFromName(char* name, struct qsockaddr* addr)
 {
-
-
-
+	//WIP
 }
 
 int UDP_AddrCompare(struct qsockaddr* addr1, struct qsockaddr* addr2)
 {
-
+	if(addr1)
+	{
+		SDLNet_GetLocalAddresses(ip->host, available);
+		SDLNet_UDP_GetPeerAddress(udpsocket, NULL);
+		memcpy(udpsocket, addr1, sizeof(addr1));
+	}
+	else if(addr2)
+	{
+		SDLNet_GetLocalAddresses(ip->host, available);
+		SDLNet_UDP_GetPeerAddress(udpsocket, NULL);
+		memcpy(udpsocket, addr2, sizeof(addr2));
+	}
+	else
+	{
+		Con_Printf("Nothing to compare");
+	}
+	return;
 }
 
 int UDP_GetSocketPort(struct qsockaddr* addr)
 {
-	if(addr)
-	{
-	//Wip..
-	}
+	ip->port = addr;
+	SDLNet_UDP_AddSocket(set, udpsocket);
+	SDLNet_UDP_Open(addr);
 }
 
 int UDP_SetSocketPort(struct qsockaddr* addr, int port)
 {
+	UDP_GetSocketPort(port);
+	SDLNet_UDP_Bind(udpsocket, available, ip->port);
+		
+	if (addr->sa_data) 
+	{
+		SDLNet_UDP_Recv(udpsocket, packet->data);	
+	}
+	else
+	{
+		SDLNet_UDP_Send(udpsocket, available, packet->status);
+	}
 
+	return ip->port;
 }

@@ -442,9 +442,9 @@ Sys_MakeCodeWriteable
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
 
-	int r;
+	int r = 0;
 	unsigned long addr;
-	int psize;
+	int psize = 0;
 	//getpagesize();
 
 	fprintf(stderr, "writable code %lx-%lx\n", startaddr, startaddr+length);

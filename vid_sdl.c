@@ -17,6 +17,7 @@ unsigned short  d_8to16table[256];
 
 int    VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte    *VGA_pagebase;
+
 #if SDL_MAJOR_VERSION == 1
 static SDL_Surface *screen = NULL;
 #elif SDL_MAJOR_VERSION == 2
@@ -72,7 +73,7 @@ void    VID_Init (unsigned char *palette)
     Uint32 flags;
     Uint32 a, r, g, b;
     int ret;
-    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM);
+    ret = SDL_Init(SDL_INIT_EVERYTHING);
     
     // Load the SDL library
     if (ret < 0)
@@ -113,7 +114,7 @@ void    VID_Init (unsigned char *palette)
 #if SDL_MAJOR_VERSION == 1    
     flags = (SDL_SWSURFACE| SDL_HWPALETTE | SDL_FULLSCREEN);
 #elif SDL_MAJOR_VERSION == 2
-    flags = (SDL_SWSURFACE | SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN);
+    flags = (SDL_SWSURFACE | SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN);
 #endif
     if ( COM_CheckParm ("-fullscreen") )
 #if SDL_MAJOR_VERSION == 1
@@ -133,7 +134,7 @@ void    VID_Init (unsigned char *palette)
 #if SDL_MAJOR_VERSION == 1
     if (!(screen = SDL_SetVideoMode(vid.width, vid.height, 8, flags)))
 #elif SDL_MAJOR_VERSION == 2
-    if(!(window = SDL_CreateWindow(NULL, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, vid.width, vid.height, flags)))
+    if (!(window = SDL_CreateWindow("Good looking quake", vid.width, vid.height, vid.width, vid.height, flags)))
 #endif
       Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
 
@@ -141,16 +142,19 @@ void    VID_Init (unsigned char *palette)
 #if SDL_MAJOR_VERSION == 1    
     SDL_WM_SetCaption(NULL, "good looking quake");
 #elif SDL_MAJOR_VERSION == 2    
-    SDL_SetWindowTitle(window, "good looking quake");
-    SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888, 8, &r, &g, &b, &a);
-    screen = SDL_CreateRGBSurface(0, vid.width, vid.height, 8, r, g, b, a);
+    //Get the surface.
+    screen = SDL_CreateRGBSurface(SDL_PIXELFORMAT_ARGB8888, vid.width, vid.height, 8, &r, &g, &b, &a);
     SDL_UpdateWindowSurface(window);
-    render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888, 8, &r, &g, &b, &a);
+    render = SDL_CreateRenderer(window, 1, SDL_RENDERER_ACCELERATED);
+    SDL_RenderPresent(render);
     SDL_SetRenderDrawBlendMode(render, SDL_BLENDMODE_BLEND);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
-    SDL_ShowCursor(SDL_DISABLE);
-    SDL_CreateRGBSurface(0, vid.width, vid.height,
-    8, 0, 0, 0, 0);
+    //TODO: SDL_Texture* texture = SDL_CreateTexture(render, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vid.width, vid.height);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(render, screen->format);
+    SDL_QueryTexture(texture, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, vid.width, vid.height);
+    SDL_RenderCopy(render, texture, NULL, NULL);
+    SDL_DestroyRenderer(render);
 #endif    
     // now know everything we need to know about the buffer
     VGA_width = vid.conwidth = vid.width;
@@ -192,7 +196,7 @@ void    VID_Shutdown (void)
 #endif
 }
 
-void    VID_Update (vrect_t *rects)
+void VID_Update (vrect_t *rects)
 {
     SDL_Rect *sdlrects;
     int n, i;
@@ -220,7 +224,7 @@ void    VID_Update (vrect_t *rects)
 #if SDL_MAJOR_VERSION == 1
     SDL_UpdateRects(screen, n, sdlrects);
 #elif SDL_MAJOR_VERSION == 2
-    SDL_FillRect(screen, n, sdlrects);
+    SDL_UpdateWindowSurfaceRects(window, n, sdlrects);
 #endif
 }
 
@@ -257,7 +261,7 @@ void D_EndDirectRect (int x, int y, int width, int height)
 #if SDL_MAJOR_VERSION == 1
     SDL_UpdateRect(screen, x, y, width, height);
 #elif SDL_MAJOR_VERSION == 2
-    SDL_RenderPresent(render);
+   
 #endif
 }
 
