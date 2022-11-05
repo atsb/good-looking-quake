@@ -8,51 +8,51 @@
 viddef_t    vid;                // global video state
 unsigned short  d_8to16table[256];
 
-// The original defaults
-//#define    BASEWIDTH    320
-//#define    BASEHEIGHT   200
-// Much better for high resolution displays
-#define    BASEWIDTH    (320*2)
-#define    BASEHEIGHT   (200*2)
+#define BASEWIDTH           320
+#define BASEHEIGHT          240
 
 int    VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte    *VGA_pagebase;
 
-#if SDL_MAJOR_VERSION == 1
 static SDL_Surface *screen = NULL;
-#elif SDL_MAJOR_VERSION == 2
-static SDL_Window *window;
-static SDL_Surface *screen;
-static SDL_Renderer *render;
-static SDL_Palette* palette;
-#endif
 
 static qboolean mouse_avail;
 static float   mouse_x, mouse_y;
 static int mouse_oldbuttonstate = 0;
 
 #if SDL_MAJOR_VERSION == 1
+// No support for option menus
+void (*vid_menudrawfn)(void) = NULL;
+void (*vid_menukeyfn)(int key) = NULL;
+
 void    VID_SetPalette (unsigned char *palette)
 #elif SDL_MAJOR_VERSION == 2
 void    VID_SetPalette(SDL_Palette *palette)
 #endif
 {
-    SDL_Color colors[256];
+	int		i;
+	SDL_Color colors[256];
 
-    for (int i=0; i<256; ++i )
-    {
+	palette_changed = true;
+
+	if (palette != vid_curpal)
+		memcpy(vid_curpal, palette, sizeof(vid_curpal));
+
+	for (int i = 0; i < 256; ++i)
+	{
 #if SDL_MAJOR_VERSION == 1
-        colors[i].r = *palette++;
-        colors[i].g = *palette++;
-        colors[i].b = *palette++;
+		colors[i].r = *palette++;
+		colors[i].g = *palette++;
+		colors[i].b = *palette++;
 #elif SDL_MAJOR_VERSION == 2
         colors[i].r = palette++;
         colors[i].g = palette++;
         colors[i].b = palette++;
 #endif
-    }
+	}
 #if SDL_MAJOR_VERSION == 1
-    SDL_SetColors(screen, colors, 0, 256);
+
+	SDL_SetColors(screen, colors, 0, 256);
 #elif SDL_MAJOR_VERSION == 2
     SDL_SetPaletteColors(palette, colors, 0, 256);
 #endif
@@ -61,6 +61,46 @@ void    VID_SetPalette(SDL_Palette *palette)
 void    VID_ShiftPalette (unsigned char *palette)
 {
     VID_SetPalette(palette);
+}
+
+void VID_LockBuffer (void)
+{
+	lockcount++;
+
+	if (lockcount > 1)
+		return;
+
+	SDL_LockSurface(screen);
+
+	// Update surface pointer for linear access modes
+	vid.buffer = vid.conbuffer = vid.direct = (pixel_t *) screen->pixels;
+	vid.rowbytes = vid.conrowbytes = screen->pitch;
+
+	if (r_dowarp)
+		d_viewbuffer = r_warpbuffer;
+	else
+		d_viewbuffer = vid.buffer;
+
+	if (r_dowarp)
+		screenwidth = WARP_WIDTH;
+	else
+		screenwidth = vid.rowbytes;
+}
+
+void VID_UnlockBuffer (void)
+{
+	lockcount--;
+
+	if (lockcount > 0)
+		return;
+
+	if (lockcount < 0)
+		return;
+
+	SDL_UnlockSurface (screen);
+
+// to turn up any unlocked accesses
+	//vid.buffer = vid.conbuffer = vid.direct = d_viewbuffer = NULL;
 }
 
 void    VID_Init (unsigned char *palette)
@@ -73,8 +113,9 @@ void    VID_Init (unsigned char *palette)
     Uint32 flags;
     Uint32 a, r, g, b;
     int ret;
-    ret = SDL_Init(SDL_INIT_EVERYTHING);
-    
+    ret = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_CDROM);
+    char caption[50];
+
     // Load the SDL library
     if (ret < 0)
         Sys_Error("VID: Couldn't load SDL: %s", SDL_GetError());
@@ -129,18 +170,26 @@ void    VID_Init (unsigned char *palette)
         flags &= ~SDL_WINDOW_SHOWN;
 #endif
     }
+    
+    if (vid.width > 1280 || vid.height > 1024)
+    {
+    	Sys_Error("Maximum Resolution is 1280 width and 1024 height");
+    }
 
     // Initialize display 
 #if SDL_MAJOR_VERSION == 1
-    if (!(screen = SDL_SetVideoMode(vid.width, vid.height, 8, flags)))
+    screen = SDL_SetVideoMode(vid.width, vid.height, 8, flags);
+    if (!screen)
 #elif SDL_MAJOR_VERSION == 2
     if (!(window = SDL_CreateWindow("Good looking quake", vid.width, vid.height, vid.width, vid.height, flags)))
 #endif
       Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
+        
 
-    VID_SetPalette(palette);
 #if SDL_MAJOR_VERSION == 1    
     SDL_WM_SetCaption(NULL, "good looking quake");
+    // now know everything we need to know about the buffer
+    VID_SetPalette(palette);
 #elif SDL_MAJOR_VERSION == 2    
     //Get the surface.
     screen = SDL_CreateRGBSurface(SDL_PIXELFORMAT_ARGB8888, vid.width, vid.height, 8, &r, &g, &b, &a);
@@ -167,7 +216,7 @@ void    VID_Init (unsigned char *palette)
     VGA_rowbytes = vid.rowbytes = screen->pitch;
     vid.conbuffer = vid.buffer;
     vid.conrowbytes = vid.rowbytes;
-    vid.direct = 0;
+    vid.direct = (pixel_t *) screen->pixels;
     
     // allocate z buffer and surface cache
     chunk = vid.width * vid.height * sizeof (*d_pzbuffer);
@@ -183,12 +232,21 @@ void    VID_Init (unsigned char *palette)
     D_InitCaches (cache, cachesize);
 
     // initialize the mouse
-    SDL_ShowCursor(SDL_DISABLE);
+    SDL_ShowCursor(0);
+    
+    vid_initialized = true;
 }
 
 void    VID_Shutdown (void)
 {
-    SDL_Quit();
+	if (vid_initialized)
+	{
+		if (screen != NULL && lockcount > 0)
+			SDL_UnlockSurface (screen);
+
+		vid_initialized = 0;
+		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
 #if SDL_MAJOR_VERSION == 2
     SDL_DestroyWindow(window);
     SDL_FreeSurface(screen);

@@ -25,10 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "r_local.h"
 #include "d_local.h"
 
-unsigned char	*r_turb_pbase, *r_turb_pdest;
-fixed16_t		r_turb_s, r_turb_t, r_turb_sstep, r_turb_tstep;
-int				*r_turb_turb;
-int				r_turb_spancount;
+unsigned char	*r_turb_pbase /* qasm */, *r_turb_pdest /* qasm */;
+fixed16_t		r_turb_s /* qasm */, r_turb_t /* qasm */, r_turb_sstep /* qasm */, r_turb_tstep /* qasm */;
+int				*r_turb_turb /* qasm */;
+int				r_turb_spancount /* qasm */;
 
 void D_DrawTurbulent8Span (void);
 
@@ -44,7 +44,7 @@ D_WarpScreen
 void D_WarpScreen (void)
 {
 	int		w, h;
-	int		u,v;
+	int		u, v;
 	byte	*dest;
 	int		*turb;
 	int		*col;
@@ -59,27 +59,27 @@ void D_WarpScreen (void)
 	wratio = w / (float)scr_vrect.width;
 	hratio = h / (float)scr_vrect.height;
 
-	for (v=0 ; v<scr_vrect.height+AMP2*2 ; v++)
+	for (v = 0; v < scr_vrect.height + AMP2*2; v++)
 	{
 		rowptr[v] = d_viewbuffer + (r_refdef.vrect.y * screenwidth) +
 				 (screenwidth * (int)((float)v * hratio * h / (h + AMP2 * 2)));
 	}
 
-	for (u=0 ; u<scr_vrect.width+AMP2*2 ; u++)
+	for (u = 0; u < scr_vrect.width + AMP2*2; u++)
 	{
 		column[u] = r_refdef.vrect.x +
 				(int)((float)u * wratio * w / (w + AMP2 * 2));
 	}
 
-	turb = intsintable + ((int)(cl.time*SPEED)&(CYCLE-1));
+	turb = intsintable + ((int)(cl.time*SPEED) & (CYCLE-1));
 	dest = vid.buffer + scr_vrect.y * vid.rowbytes + scr_vrect.x;
 
-	for (v=0 ; v<scr_vrect.height ; v++, dest += vid.rowbytes)
+	for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes)
 	{
 		col = &column[turb[v]];
 		row = &rowptr[v];
 
-		for (u=0 ; u<scr_vrect.width ; u+=4)
+		for (u = 0; u < scr_vrect.width; u += 4)
 		{
 			dest[u+0] = row[turb[u+0]][col[u+0]];
 			dest[u+1] = row[turb[u+1]][col[u+1]];
@@ -114,6 +114,9 @@ void D_DrawTurbulent8Span (void)
 #endif	// !id386
 
 
+short			*pz; // Manoel Kasimier - translucent water
+int				izi, izistep;
+
 /*
 =============
 Turbulent8
@@ -122,10 +125,11 @@ Turbulent8
 void Turbulent8 (espan_t *pspan)
 {
 	int				count;
+	int				izistep2; // Manoel Kasimier - translucent water
 	fixed16_t		snext, tnext;
 	float			sdivz, tdivz, zi, z, du, dv, spancountminus1;
 	float			sdivz16stepu, tdivz16stepu, zi16stepu;
-	
+
 	r_turb_turb = sintable + ((int)(cl.time*SPEED)&(CYCLE-1));
 
 	r_turb_sstep = 0;	// keep compiler happy
@@ -137,10 +141,16 @@ void Turbulent8 (espan_t *pspan)
 	tdivz16stepu = d_tdivzstepu * 16;
 	zi16stepu = d_zistepu * 16;
 
+// we count on FP exceptions being turned off to avoid range problems
+	izistep = (int)(d_zistepu * 0x8000 * 0x10000);
+	izistep2 = izistep*2;
+
 	do
 	{
-		r_turb_pdest = (unsigned char *)((byte *)d_viewbuffer +
-				(screenwidth * pspan->v) + pspan->u);
+		r_turb_pdest = (byte *)((byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u);
+
+		pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u; // Manoel Kasimier - translucent water
+
 
 		count = pspan->count;
 
@@ -152,6 +162,9 @@ void Turbulent8 (espan_t *pspan)
 		tdivz = d_tdivzorigin + dv*d_tdivzstepv + du*d_tdivzstepu;
 		zi = d_ziorigin + dv*d_zistepv + du*d_zistepu;
 		z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
+
+	// we count on FP exceptions being turned off to avoid range problems // Manoel Kasimier - translucent water
+		izi = (int)(zi * 0x8000 * 0x10000); // Manoel Kasimier - translucent water
 
 		r_turb_s = (int)(sdivz * z) + sadjust;
 		if (r_turb_s > bbextents)
@@ -273,9 +286,7 @@ void D_DrawSpans8 (espan_t *pspan)
 
 	do
 	{
-		pdest = (unsigned char *)((byte *)d_viewbuffer +
-				(screenwidth * pspan->v) + pspan->u);
-
+		pdest = (unsigned char *)((byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u);
 		count = pspan->count;
 
 	// calculate the initial s/z, t/z, 1/z, s, and t and clamp
@@ -383,6 +394,156 @@ void D_DrawSpans8 (espan_t *pspan)
 }
 
 #endif
+#if 0 // Fence --- I think it works, but we need more rewire
+// Baker mod ...
+void D_DrawSpans8_Fence (espan_t *pspan)
+{
+	int				count, spancount;
+	unsigned char	*pbase, *pdest;
+	fixed16_t		s, t, snext, tnext, sstep, tstep;
+	float			sdivz, tdivz, zi, z, du, dv, spancountminus1;
+	float			sdivz8stepu, tdivz8stepu, zi8stepu;
+	int				izi, izistep;
+	static byte fencepix;
+	sstep = 0;	// keep compiler happy
+	tstep = 0;	// ditto
+
+	pbase = (byte *)cacheblock;
+
+	sdivz8stepu = d_sdivzstepu * 8;
+	tdivz8stepu = d_tdivzstepu * 8;
+	zi8stepu = d_zistepu * 8;
+
+	// we count on FP exceptions being turned off to avoid range problems
+	izistep = (int)(d_zistepu * 0x8000 * 0x10000);
+	do
+	{
+		pdest = (byte *)((byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u);
+		pz = d_pzbuffer + (d_zwidth * pspan->v) + pspan->u; // Baker
+
+		count = pspan->count;
+
+	// calculate the initial s/z, t/z, 1/z, s, and t and clamp
+		du = (float)pspan->u;
+		dv = (float)pspan->v;
+
+		sdivz = d_sdivzorigin + dv*d_sdivzstepv + du*d_sdivzstepu;
+		tdivz = d_tdivzorigin + dv*d_tdivzstepv + du*d_tdivzstepu;
+		zi = d_ziorigin + dv*d_zistepv + du*d_zistepu;
+		z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
+	// we count on FP exceptions being turned off to avoid range problems
+		izi = (int)(zi * 0x8000 * 0x10000); // Baker
+//		izistep2 = izistep*2;
+
+		s = (int)(sdivz * z) + sadjust;
+		if (s > bbextents)
+			s = bbextents;
+		else if (s < 0)
+			s = 0;
+
+		t = (int)(tdivz * z) + tadjust;
+		if (t > bbextentt)
+			t = bbextentt;
+		else if (t < 0)
+			t = 0;
+
+		do
+		{
+		// calculate s and t at the far end of the span
+			if (count >= 8)
+				spancount = 8;
+			else
+				spancount = count;
+
+			count -= spancount;
+
+			if (count)
+			{
+			// calculate s/z, t/z, zi->fixed s and t at far end of span,
+			// calculate s and t steps across span by shifting
+				sdivz += sdivz8stepu;
+				tdivz += tdivz8stepu;
+				zi += zi8stepu;
+				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
+
+				snext = (int)(sdivz * z) + sadjust;
+				if (snext > bbextents)
+					snext = bbextents;
+				else if (snext < 8)
+					snext = 8;	// prevent round-off error on <0 steps from
+								//  from causing overstepping & running off the
+								//  edge of the texture
+
+				tnext = (int)(tdivz * z) + tadjust;
+				if (tnext > bbextentt)
+					tnext = bbextentt;
+				else if (tnext < 8)
+					tnext = 8;	// guard against round-off error on <0 steps
+
+				sstep = (snext - s) >> 3;
+				tstep = (tnext - t) >> 3;
+// Checkpoint
+// Checkpoint
+// Checkpoint
+// Checkpoint
+			}
+			else
+			{
+			// calculate s/z, t/z, zi->fixed s and t at last pixel in span (so
+			// can't step off polygon), clamp, calculate s and t steps across
+			// span by division, biasing steps low so we don't run off the
+			// texture
+				spancountminus1 = (float)(spancount - 1);
+				sdivz += d_sdivzstepu * spancountminus1;
+				tdivz += d_tdivzstepu * spancountminus1;
+				zi += d_zistepu * spancountminus1;
+				z = (float)0x10000 / zi;	// prescale to 16.16 fixed-point
+				snext = (int)(sdivz * z) + sadjust;
+				if (snext > bbextents)
+					snext = bbextents;
+				else if (snext < 8)
+					snext = 8;	// prevent round-off error on <0 steps from
+								//  from causing overstepping & running off the
+								//  edge of the texture
+
+				tnext = (int)(tdivz * z) + tadjust;
+				if (tnext > bbextentt)
+					tnext = bbextentt;
+				else if (tnext < 8)
+					tnext = 8;	// guard against round-off error on <0 steps
+
+				if (spancount > 1)
+				{
+					sstep = (snext - s) / (spancount - 1);
+					tstep = (tnext - t) / (spancount - 1);
+				}
+			}
+
+			do
+			{
+				// This is doing *pdest = something, then ++ is moving it forward
+	//			*pdest++ = *(pbase + (s >> 16) + (t >> 16) * cachewidth);
+// new
+				fencepix = *(pbase + (s >> 16) + (t >> 16) * cachewidth);
+            	if (*pz  <= (izi >> 16) && fencepix != 255) {
+					*pdest = fencepix;
+					*pz = (izi >> 16);
+				}
+				pdest ++;
+				pz ++;
+            	izi += izistep;
+				s += sstep;
+				t += tstep;
+			} while (--spancount > 0);
+
+			s = snext;
+			t = tnext;
+
+		} while (count > 0);
+
+	} while ((pspan = pspan->pnext) != NULL);
+}
+#endif // FENCE -- I believe it works, not 100%
 
 
 #if	!id386
@@ -394,10 +555,10 @@ D_DrawZSpans
 */
 void D_DrawZSpans (espan_t *pspan)
 {
-	int				count, doublecount, izistep;
-	int				izi;
+	int			count, doublecount, izistep;
+	int			izi;
 	short			*pdest;
-	unsigned		ltemp;
+	unsigned int		ltemp;
 	double			zi;
 	float			du, dv;
 
@@ -419,7 +580,7 @@ void D_DrawZSpans (espan_t *pspan)
 	// we count on FP exceptions being turned off to avoid range problems
 		izi = (int)(zi * 0x8000 * 0x10000);
 
-		if ((long)pdest & 0x02)
+		if ((intptr_t)pdest & 0x02)
 		{
 			*pdest++ = (short)(izi >> 16);
 			izi += izistep;
@@ -445,5 +606,5 @@ void D_DrawZSpans (espan_t *pspan)
 	} while ((pspan = pspan->pnext) != NULL);
 }
 
-#endif
+#endif // !id386
 

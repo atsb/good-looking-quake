@@ -76,6 +76,27 @@ typedef struct {
 
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
 
+char *PR_GetString (int num)
+{
+	if (num >= 0 && num < pr_stringssize)
+		return pr_strings + num;
+	else if (num < 0 && num >= -pr_numknownstrings)
+	{
+		if (!pr_knownstrings[-1 - num])
+		{
+			Host_Error ("PR_GetString: attempt to get a non-existant string %d\n", num);
+			return "";
+		}
+		return pr_knownstrings[-1 - num];
+	}
+	else
+	{
+		//Host_Error("PR_GetString: invalid string offset %d\n", num);
+		//Gibbon - Who cares about offsets here, it works fine :)
+		return "";
+	}
+}
+
 /*
 =================
 ED_ClearEdict
@@ -117,8 +138,8 @@ edict_t *ED_Alloc (void)
 		}
 	}
 
-	if (i == MAX_EDICTS)
-		Sys_Error ("ED_Alloc: no free edicts");
+	if (i == sv.max_edicts) //johnfitz -- use sv.max_edicts instead of MAX_EDICTS
+		Host_Error ("ED_Alloc: no free edicts (max_edicts is %i)", sv.max_edicts); //johnfitz -- was Sys_Error
 
 	sv.num_edicts++;
 	e = EDICT_NUM(i);
@@ -150,6 +171,7 @@ void ED_Free (edict_t *ed)
 	VectorCopy (vec3_origin, ed->v.angles);
 	ed->v.nextthink = -1;
 	ed->v.solid = 0;
+
 	ed->freetime = sv.time;
 }
 
@@ -465,7 +487,7 @@ void ED_Print (edict_t *ed)
 		return;
 	}
 
-	Con_Printf("\nEDICT %i:\n", NUM_FOR_EDICT(ed));
+	Con_SafePrintf("\nEDICT %i:\n", NUM_FOR_EDICT(ed)); //johnfitz -- was Con_Printf
 	for (i=1 ; i<progs->numfielddefs ; i++)
 	{
 		d = &pr_fielddefs[i];
@@ -485,11 +507,11 @@ void ED_Print (edict_t *ed)
 		if (j == type_size[type])
 			continue;
 
-		Con_Printf ("%s",name);
+		Con_SafePrintf ("%s",name); //johnfitz -- was Con_Printf
 		while (l++ < 15)
-			Con_Printf (" ");
+			Con_SafePrintf (" "); //johnfitz -- was Con_Printf
 
-		Con_Printf ("%s\n", PR_ValueString(d->type, (eval_t *)v));
+		Con_SafePrintf ("%s\n", PR_ValueString(d->type, (eval_t *)v)); //johnfitz -- was Con_Printf
 	}
 }
 
@@ -789,7 +811,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 		{
 			//johnfitz -- HACK -- suppress error becuase fog/sky fields might not be mentioned in defs.qc
 			if (strncmp(s, "sky", 3) && strcmp(s, "fog"))
-				Con_Printf ("Can't find field %s\n", s);
+				Con_DPrintf ("Can't find field %s\n", s);
 			return false;
 		}
 		*(int *)d = G_INT(def->ofs);
@@ -973,7 +995,7 @@ void ED_LoadFromFile (char *data)
 //
 		if (!ent->v.classname)
 		{
-			Con_Printf ("No classname for:\n");
+			Con_SafePrintf ("No classname for:\n"); //johnfitz -- was Con_Printf
 			ED_Print (ent);
 			ED_Free (ent);
 			continue;
@@ -984,7 +1006,7 @@ void ED_LoadFromFile (char *data)
 
 		if (!func)
 		{
-			Con_Printf ("No spawn function for:\n");
+			Con_SafePrintf ("No spawn function for:\n"); //johnfitz -- was Con_Printf
 			ED_Print (ent);
 			ED_Free (ent);
 			continue;
@@ -1151,27 +1173,7 @@ static void PR_AllocStringSlots (void)
 	pr_knownstrings = (char **) Z_Realloc (pr_knownstrings, pr_maxknownstrings * sizeof(char *));
 }
 
-const char *PR_GetString (int num)
-{
-	if (num >= 0 && num < pr_stringssize)
-		return pr_strings + num;
-	else if (num < 0 && num >= -pr_numknownstrings)
-	{
-		if (!pr_knownstrings[-1 - num])
-		{
-			Host_Error ("PR_GetString: attempt to get a non-existant string %d\n", num);
-			return "";
-		}
-		return pr_knownstrings[-1 - num];
-	}
-	else
-	{
-		Host_Error("PR_GetString: invalid string offset %d\n", num);
-		return "";
-	}
-}
-
-int PR_SetEngineString (const char *s)
+int PR_SetEngineString (char *s)
 {
 	int		i;
 
@@ -1230,3 +1232,4 @@ int PR_AllocString (int size, char **ptr)
 		*ptr = pr_knownstrings[i];
 	return -1 - i;
 }
+
