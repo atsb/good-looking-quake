@@ -1,10 +1,12 @@
 /* -*- Mode: C; tab-width: 4 -*- */ 
 
-#include "SDL.h"
+#include <SDL2/SDL.h>
+
 #ifndef _WIN32
 #include <unistd.h>
 #include <sys/time.h>
 #endif
+
 #include <signal.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -15,12 +17,18 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+
 #ifndef _WIN32
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#endif
+
+#ifdef _WIN32
+#include <direct.h>
+#include <time.h>
 #endif
 
 #include "quakedef.h"
@@ -270,7 +278,7 @@ int	Sys_FileTime (char *path)
 void Sys_mkdir (char *path)
 {
 #ifdef __WIN32__
-    mkdir (path);
+	_mkdir (path);
 #else
     mkdir (path, 0777);
 #endif

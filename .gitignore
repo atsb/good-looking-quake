@@ -19,3 +19,8 @@ aclocal.m4
 goodlookingquake
 *.m4
 goodlookingquake
+*.obj
+*.tlog
+*.log
+*.txt
+*.pdb
