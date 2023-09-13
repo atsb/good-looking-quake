@@ -123,8 +123,16 @@ void VID_Init(unsigned char* palette)
     char caption[50];
 
     // Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) < 0)
-        Sys_Error("VID: Couldn't load SDL: %s", SDL_GetError());
+    SDL_version v;
+    SDL_version *sdl_version = &v;
+    SDL_GetVersion(&v);
+
+    Sys_Printf("Found SDL version %i.%i.%i\n",sdl_version->major,sdl_version->minor,sdl_version->patch);
+    
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) < 0) {
+        Sys_Error("VID: Couldn't initialise SDL: %s\n", SDL_GetError());
+        return 1;
+    }
 
     // Set up display mode (width and height)
     vid.width = BASEWIDTH;
@@ -158,7 +166,7 @@ void VID_Init(unsigned char* palette)
     }
 
     // Set video width, height, and flags
-    flags = (SDL_SWSURFACE | SDL_WINDOW_FULLSCREEN);
+    flags = (SDL_SWSURFACE | SDL_RENDERER_PRESENTVSYNC | SDL_WINDOW_FULLSCREEN);
 
     if (COM_CheckParm("-fullscreen"))
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -173,13 +181,15 @@ void VID_Init(unsigned char* palette)
     }
 
     // Initialize display 
-    SDL_CreateWindow("Good Looking Quake", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, vid.width, vid.height, flags);
-    if (!window)
+    window = SDL_CreateWindow("Good Looking Quake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, vid.width, vid.height, flags);
+    if (window == NULL) {
         Sys_Error("VID: Couldn't create window: %s\n", SDL_GetError());
+        }
 
-    SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (!renderer)
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == NULL) {
         Sys_Error("VID: Couldn't create renderer: %s\n", SDL_GetError());
+	}
 
     VID_SetPalette(palette);
 
