@@ -27,8 +27,11 @@
 #endif
 
 #ifdef _WIN32
+#include <windows.h>
 #include <direct.h>
 #include <time.h>
+#else
+#include <sys/mman.h>
 #endif
 
 #include "quakedef.h"
@@ -377,9 +380,8 @@ void moncontrol(int x)
 {
 }
 
-int main (int c, char **v)
+int main(int argc, char* argv[])
 {
-
 	double		time, oldtime, newtime;
 	quakeparms_t parms;
 	extern int vcrFile;
@@ -397,7 +399,7 @@ int main (int c, char **v)
     // Disable cache, else it looks in the cache for config.cfg.
 	parms.cachedir = NULL;
 
-	COM_InitArgv(c, v);
+	COM_InitArgv(argc, argv);
 	parms.argc = com_argc;
 	parms.argv = com_argv;
 
@@ -449,9 +451,16 @@ Sys_MakeCodeWriteable
 */
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 {
-
-	int r;
 	unsigned long addr;
+
+#ifdef _WIN32
+	DWORD oldProtect;
+	addr = startaddr;
+	if (!VirtualProtect((LPVOID)addr, length, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+		Sys_Error("Protection change failed\n");
+	}
+#else
+	int r;
 	int psize = getpagesize();
 
 	fprintf(stderr, "writable code %lx-%lx\n", startaddr, startaddr+length);
@@ -462,6 +471,6 @@ void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length)
 
 	if (r < 0)
     		Sys_Error("Protection change failed\n");
-
+#endif
 }
 

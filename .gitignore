@@ -24,3 +24,11 @@ goodlookingquake
 *.log
 *.txt
 *.pdb
+*.user
+*.ipdb
+*.iobj
+*.recipe
+*.exe
+*.map
+*.dll
+*.user

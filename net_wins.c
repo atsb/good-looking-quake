@@ -129,7 +129,7 @@ int WINS_Init (void)
 	
 	if (hInst == NULL)
 	{
-		Con_SafePrintf ("Failed to load winsock.dll\n");
+		Con_SafePrintf ("Failed to load wsock32.dll\n");
 		winsock_lib_initialized = false;
 		return -1;
 	}
@@ -402,7 +402,7 @@ int WINS_Read (int socket, byte *buf, int len, struct qsockaddr *addr)
 	ret = precvfrom (socket, buf, len, 0, (struct sockaddr *)addr, &addrlen);
 	if (ret == -1)
 	{
-		int errno = pWSAGetLastError();
+		errno = pWSAGetLastError();
 
 		if (errno == WSAEWOULDBLOCK || errno == WSAECONNREFUSED)
 			return 0;
