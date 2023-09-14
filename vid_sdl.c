@@ -10,6 +10,11 @@ unsigned short  d_8to16table[256];
 #define BASEWIDTH           320
 #define BASEHEIGHT          240
 
+//ATSB: Global resolution for correct display of various things in the game like intermissions.
+//ATSB: This goes along with the scaling to ensure it all looks nice.
+unsigned screenWidth = 320;
+unsigned screenHeight = 200;
+
 int    VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 byte    *VGA_pagebase;
 
@@ -21,10 +26,12 @@ static unsigned char	vid_curpal[256*3];	/* save for mode changes */
 static qboolean mouse_avail;
 static float   mouse_x, mouse_y;
 static int mouse_oldbuttonstate = 0;
+int format;
 
 SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Surface* paletteSurface;
+static SDL_Texture *screen_tex;
 
 // No support for option menus
 void (*vid_menudrawfn)(void) = NULL;
@@ -47,9 +54,16 @@ void VID_SetPalette(unsigned char* palette)
         colors[i].b = *palette++;
         colors[i].a = SDL_ALPHA_OPAQUE;  // Set the alpha value, assuming fully opaque
     }
+    
+    SDL_CreateRGBSurfaceWithFormat(0, 256, 1, 8, SDL_PIXELFORMAT_INDEX8);
+    if (!paletteSurface)
+    {
+        // Handle error
+        return;
+    }
 
     // Create a palette surface with SDL_CreateRGBSurface
-    SDL_CreateRGBSurfaceWithFormat(0, 256, 1, 8, SDL_PIXELFORMAT_INDEX8);
+    screen = SDL_CreateRGBSurface(0, vid.width, vid.height, 8, 0, 0, 0, 0);
     if (!paletteSurface)
     {
         // Handle error
@@ -114,7 +128,8 @@ void VID_UnlockBuffer (void)
 
 void VID_Init(unsigned char* palette)
 {
-    int pnum, chunk;
+    int pnum, chunk, pitch;
+    void *pixels;
     byte* cache;
     int cachesize;
     Uint8 video_bpp;
@@ -131,7 +146,6 @@ void VID_Init(unsigned char* palette)
     
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) < 0) {
         Sys_Error("VID: Couldn't initialise SDL: %s\n", SDL_GetError());
-        return 1;
     }
 
     // Set up display mode (width and height)
@@ -179,9 +193,27 @@ void VID_Init(unsigned char* palette)
     {
         Sys_Error("Maximum Resolution is 1280 width and 1024 height");
     }
+    
+    //ATSB: Adjust W/H depending on current screen resolution
+    SDL_DisplayMode DispMode;
+    SDL_GetCurrentDisplayMode(0, &DispMode);
+
+    //Adjust height so the screen is 4:3 aspect ratio
+    //ATSB: Stuck in my DisplayMode as local variables for the SDL window and video scaling only
+    //ATSB: So that it looks better upscaled to a decent resolution, however all scaling
+    //ATSB: Remains at 4:3 320x200 so that nothing is stretched on widescreen resolutions.
+    
+    //ATSB: No idea why, but Windows vs Linux behaves differently...
+#ifdef _WIN32
+    screenWidth = DispMode.h * 3.0 / 4.0;
+    screenHeight = DispMode.w * 3.0 / 4.0;
+#else
+    screenWidth = DispMode.w * 3.0 / 4.0;
+    screenHeight = DispMode.h * 3.0 / 4.0;
+#endif
 
     // Initialize display 
-    window = SDL_CreateWindow("Good Looking Quake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, vid.width, vid.height, flags);
+    window = SDL_CreateWindow("Good Looking Quake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, flags);
     if (window == NULL) {
         Sys_Error("VID: Couldn't create window: %s\n", SDL_GetError());
         }
@@ -192,6 +224,18 @@ void VID_Init(unsigned char* palette)
 	}
 
     VID_SetPalette(palette);
+    
+    format = SDL_GetWindowPixelFormat(window);
+    if (format == SDL_PIXELFORMAT_UNKNOWN)
+        format = SDL_PIXELFORMAT_RGBA32;
+    screen_tex = SDL_CreateTexture(renderer, format, SDL_TEXTUREACCESS_STREAMING, vid.width, vid.height);
+    if (!screen_tex)
+    {
+        SDL_DestroyRenderer(renderer);
+        renderer = NULL;
+        SDL_DestroyWindow(window);
+        window = NULL;
+    }
 
     sprintf(caption, "Good Looking Quake - Version %4.2f", VERSION);
     SDL_SetWindowTitle(window, caption);
